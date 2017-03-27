@@ -190,7 +190,7 @@ def main():
     
     lambdas_to_try = [5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 110, 120]
     ranks_to_try = [3, 5, 10, 15, 20, 25, 30, 35, 40, 50]
-    srmse_rank_lambda_plot(R_train, R_test, ranks_to_try, lambdas_to_try)
+    rmse_rank_lambda_plot(R_train, R_test, ranks_to_try, lambdas_to_try)
 
 if __name__ == "__main__":
     main()
