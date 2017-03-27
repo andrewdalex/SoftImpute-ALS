@@ -16,15 +16,6 @@ class SoftImpute_ALS:
         self._X_star = np.zeros((self._m, self._n))
         self._Xt_star = np.zeros((self._n, self._m))
 
-    def _text_to_CSR(filename, num_users, num_items):
-    	raw_data = np.genfromtxt(filename, dtype=np.int32)
-    	users = raw_data[:, 0] - 1
-    	items = raw_data[:, 1] - 1
-    	ratings = raw_data[:, 2].astype(np.float64)
-    	R = sp.coo_matrix((ratings, (users, items)), shape=(num_users, num_items))
-    	return R.tocsr()
-
-
     def _bootstrap(self, k):
         self._U = np.zeros((self._m,k))
         self._V = np.zeros((self._n,k))
@@ -35,11 +26,11 @@ class SoftImpute_ALS:
         self._Dsq_old = np.eye(k)
 
     def _frob(self):
-        denom = np.trace((self._Dsq_old**2))
-        utu = np.multiply(self._Dsq, (self._U.T.dot(self._U_old)))
-        vtv = np.multiply(self._Dsq_old, (self._V_old.T.dot(self._V)))
+        denom = np.trace((self._Dsq_old**4))
+        utu = np.dot(self._Dsq_old**2, (self._U_old.T.dot(self._U)))
+        vtv = np.dot(self._Dsq**2, (self._V.T.dot(self._V_old)))
         uvprod = np.trace(utu.dot(vtv))
-        num = denom + np.trace((self._Dsq ** 2)) - 2*uvprod
+        num = denom + np.trace((self._Dsq ** 4)) - 2*uvprod
         return num / denom
 
     def _compute_cost(self):
@@ -50,14 +41,12 @@ class SoftImpute_ALS:
         norm_B = self._Lambda * (np.linalg.norm(self._B, 'fro')) ** 2
         return cost + norm_A + norm_B
 
-    def fit(self, k=40, thresh=1e-05, Lambda=20, maxit=50, plot_conv=None):
+    def fit(self, k=40, thresh=1e-05, Lambda=5, maxit=100, plot_conv=None):
 
         if (k != self._k):
             self._bootstrap(k)
             self._k = k
-        #preallocate local data structures
-        #define in class scope for easy parameter passing between aux functions
-        #references will be desroyed before fit terminates
+        
         self._A = np.dot(self._U, self._Dsq)
         self._B = np.dot(self._V, self._Dsq)
 
@@ -122,6 +111,7 @@ class SoftImpute_ALS:
             plt.plot(x_plot, y_plot, 'sg')
             plt.xlabel('Number of Iterations')
             plt.ylabel('Computed Cost')
+            plt.title('Lambda = 5')
             plt.savefig(plot_conv)
         return
 
@@ -151,7 +141,7 @@ def main():
     R_train = text_to_CSR('data/ml-100k/ub.base', num_users, num_items)
     R_test = text_to_CSR('data/ml-100k/ub.test', num_users, num_items)
     sals = SoftImpute_ALS(40, R_train)
-    sals.fit(plot_conv="plots/test.jpg")
+    sals.fit(Lambda=5)
     print sals.compute_rmse(R_test)
 
 if __name__ == "__main__":
