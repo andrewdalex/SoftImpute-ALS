@@ -122,12 +122,16 @@ class SoftImpute_ALS:
 
 
         #Final Step: Output Solution
-        M = self._X_star.dot(self._V)
+	M = self._X_star.dot(self._V)
         self._U[:,:], d, v = npla.svd(M, False)
         self._V[:,:] = np.dot(self._V, v)
-        self._Dsq[:,:] = np.diag(d - self._Lambda)
-        self._Dsq[:,:] = np.fmax(self._Dsq, 0)
-
+        d = np.fmax(d - Lambda, 0)
+        self._Dsq = np.diag(d[d>0])
+        k, _ = self._Dsq.shape
+        self._U = self._U[:,:k]
+        self._Dsq = self._Dsq[:k]
+        self._V = self._V[:, :k]
+	
         if plot_conv is not None:
             plt.figure()
             plt.plot(x_plot, y_plot, 'sg')
